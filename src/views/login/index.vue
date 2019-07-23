@@ -61,7 +61,7 @@
       </el-form-item>
       <a v-show="loginForm.showImageCode" href="javascript:;"><img :src="imgCode" @click="verifyCode"></a>
 
-      <el-button :loading="loading" type="primary" style="width:100%;margin-bottom:30px;" @click.native.prevent="handleLogin" tabindex="4">登录</el-button>
+      <el-button :loading="loading" type="primary" style="width:100%;margin-bottom:30px;" tabindex="4" @click.native.prevent="handleLogin">登录</el-button>
 
     </el-form>
   </div>
@@ -69,7 +69,6 @@
 
 <script>
 import { Graphic } from '@/api/user'
-
 
 export default {
   name: 'Login',
@@ -138,8 +137,8 @@ export default {
     },
     verifyCode() {
       Graphic().then(res => {
-        this.loginForm.imageToken = res.verifytoken
-        this.imgCode = `${res.qrcode}`
+        this.loginForm.imageToken = res.VerifyToken
+        this.imgCode = `${res.VerifyBase64Str}`
       })
     },
     focusVerifyCode() {
@@ -159,11 +158,22 @@ export default {
       this.$refs.loginForm.validate(valid => {
         if (valid) {
           this.loading = true
-          this.$store.dispatch('user/login', this.loginForm).then(() => {
+          this.$store.dispatch('user/login', {
+            usrid: this.loginForm.username, // 用户名
+            password: this.loginForm.password, // 密码
+            loginparm: '123', // 附带参数
+            verifytoken: this.loginForm.imageToken, // 凭据
+            verifycode: this.loginForm.imageCode // 图形验证码
+          }).then(res => {
+            this.$message.success(`${res.Message}`)
             this.$router.push({ path: this.redirect || '/' })
             this.loading = false
-          }).catch(() => {
+          }).catch(res => {
+            console.log(res)
+            this.$message.error(`${res.Message}`)
             this.loading = false
+            this.verifyCode()
+            this.loginForm.imgCodeInput = ''
           })
         } else {
           console.log('error submit!!')
